@@ -2040,11 +2040,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "M:\\CursoBaltaDapper\\CursoBaltaDapper.csproj",
+      "projectUniqueName": "M:\\githubRepo\\simple-crud-dapper-consoleapp\\CursoBaltaDapper\\CursoBaltaDapper.csproj",
       "projectName": "CursoBaltaDapper",
-      "projectPath": "M:\\CursoBaltaDapper\\CursoBaltaDapper.csproj",
+      "projectPath": "M:\\githubRepo\\simple-crud-dapper-consoleapp\\CursoBaltaDapper\\CursoBaltaDapper.csproj",
       "packagesPath": "C:\\Users\\mathe\\.nuget\\packages\\",
-      "outputPath": "M:\\CursoBaltaDapper\\obj\\",
+      "outputPath": "M:\\githubRepo\\simple-crud-dapper-consoleapp\\CursoBaltaDapper\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\mathe\\AppData\\Roaming\\NuGet\\NuGet.Config",

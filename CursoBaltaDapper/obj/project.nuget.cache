@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "TsKXgKPTeQ8JTDcKcV+vH4eYWlwuOuQEkvZleYWHzjqj2CjepowsSepYaK9HdVWjxjYr4IXoWHPIQPS9t656mQ==",
+  "dgSpecHash": "wVK+GaMgUqXOoHXWdAs9jrmMJrqpkkEIg45EpdGT3pmooR9YASNA6ncLE07hB4adcdVFrZiUfiwz1dq7UhRaFg==",
   "success": true,
-  "projectFilePath": "M:\\CursoBaltaDapper\\CursoBaltaDapper.csproj",
+  "projectFilePath": "M:\\githubRepo\\simple-crud-dapper-consoleapp\\CursoBaltaDapper\\CursoBaltaDapper.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\mathe\\.nuget\\packages\\azure.core\\1.25.0\\azure.core.1.25.0.nupkg.sha512",
     "C:\\Users\\mathe\\.nuget\\packages\\azure.identity\\1.7.0\\azure.identity.1.7.0.nupkg.sha512",

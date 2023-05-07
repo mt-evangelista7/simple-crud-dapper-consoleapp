@@ -13,108 +13,12 @@ namespace CursoBaltaDapper
 
         static void Main(string[] args)
         {
-            // // Cria uma nova categoria
-            // var category = new Category();
-            // category.Id = Guid.NewGuid();
-            // category.Title = "Amazon AWS";
-            // category.Url = "balta/category/amazon";
-            // category.Description = "Categoria destinada a serviços do AWS";
-            // category.Order = 8;
-            // category.Summary = "AWS Clound";
-            // category.Featured = false;
-
-            // // Para se previnir de um SQL Injection, é extritamente proibido, usar concatenação de strings numa query
-            // // Ou seja, caso tenha parametros que precisam ser utilizados na query
-            // // Em hipotese alguma use concatenação, como por exemplo ${}, ou qualquer outra forma.
-
-            // // SEMPRE USAR OS PARAMETERS E NÃO CONCATENAÇÃO
-
-            // // Cria o insert
-            // // o @ é apenas para poder quebrar linha, não é nescessario para o funcionamento
-            // var insertSql = @"INSERT INTO 
-            //     [Category] 
-            // VALUES(
-            //     @id,
-            //     @title,
-            //     @url,
-            //     @description,
-            //     @order,
-            //     @summary,
-            //     @featured
-            // )";
-
-            // using (var connection = new SqlConnection(connectionString)) 
-            // {
-            //     // Executa o insert criado e passa os parameters
-            //     // o Execute retorna a quantidade de linha afetadas
-            //     var rows = connection.Execute(insertSql, new {
-            //         id = category.Id,
-            //         title = category.Title,
-            //         url = category.Url,
-            //         description = category.Description,
-            //         order = category.Order,
-            //         summary = category.Summary,
-            //         featured = category.Featured
-            //     });
-
-            //     // Mostra a quantidade de linhas inseridas com o insert
-            //     Console.WriteLine($"{rows} linha(s) inseridas");
-
-            //     // O .Query executa uma query 
-            //     // Definimos que categories será um enumerador de categoria
-            //     // Ou seja, vai retornar as categorias do banco
-            //     var categories = connection.Query<Category>("SELECT [Id], [Title], [Url], [Description] FROM [Category]"); // Usamos o query pois sabemos que o retorno pode ser mais de um
-
-            //     // Para cada categoria que o banco retornou
-            //     foreach(var categoryItem in categories) 
-            //     {
-            //         // Printa o id e no titulo e etc
-            //         Console.WriteLine($"ID: {categoryItem.Id} -- Title: {categoryItem.Title}");
-            //     }
-            // }
-
-
             var con = new SqlConnection();
 
             var dapperEx = new DapperEx();
 
-            dapperEx.InsertCategory(con);
-
-            Console.WriteLine("Categoria criada!");
-
-            dapperEx.ListCategories(con);
-
-            dapperEx.UpdateCategory(con, "Nuvem", "b4c5af73-7e02-4ff7-951c-f69ee1729cac");
-
-            Console.WriteLine("Categoria atualizada!");
-
-            dapperEx.ListCategories(con);
-
-            dapperEx.DeleteCategory(con, "fc67afb8-3edd-4836-980c-05fcd51a036d");
-
-            Console.WriteLine("Categoria deletada!");
-
-            dapperEx.ListCategories(con);
-
-            dapperEx.InsertManyCategories(con);
-
-            Console.WriteLine("Categorias criadas!");
-
-            dapperEx.ListCategories(con);
-
-            dapperEx.ExecuteProcedure(con);
-
-            Console.WriteLine("Procedure executada!");
-
-            dapperEx.ListCategories(con);
-
-            dapperEx.ExecuteReadProcedure(con);
-
-            dapperEx.InsertCategoryExecuteScalar(con);
-
-
+            // Chamar os metodos vv
         }
-
 
         // Insere uma categoria
         public void InsertCategory(SqlConnection connection)
@@ -364,6 +268,218 @@ namespace CursoBaltaDapper
 
                 Console.WriteLine($"ID GERADO:{idGerado}");
             };
+        }
+
+        // ** Relacionamento entre tabelas **
+
+        // Um para um
+        public void OneToOne(SqlConnection connection)
+        {
+            var sql = @"
+            SELECT 
+                * 
+            FROM 
+                [CareerItem] 
+            INNER JOIN 
+                [Course] ON [CareerItem].[CourseId] = [Course].[Id]
+            ";
+
+            using (connection = new SqlConnection(connectionString))
+            {
+                // <Tabela A, Tabela B e a junção está dentro da tabela A>(script sql, função para definir como o dapper vai percorer os itens e carregar um course dentro de um careerItem)
+                // Essa função recebe dois parametros, um careerItem e um course, e deinimos que a propriedade Course de careerItem recebe o parametro course
+                // e retornamos o carrerItem
+                var items = connection.Query<CareerItem, Course, CareerItem>(sql, (careerItem, course) =>
+                {
+                    careerItem.Course = course;
+                    return careerItem;
+                }, splitOn: "Id"); // Usamos o splitOn para definir aonde ocorre a separação do que é careerItem e Course, que nesse caso é o Id (O primeiro item de cada tabela)
+
+
+                // Para cada careerItem
+                foreach (var item in items)
+                {
+                    Console.WriteLine($"{item.Title} - Curso: {item.Course.Title}");
+                }
+            };
+        }
+
+        // Um para muitos
+        public void OneToMany(SqlConnection connection)
+        {
+            var sql = @"
+                SELECT 
+                    [Career].[Id],
+                    [Career].[Title],
+                    [CareerItem].[CareerId],
+                    [CareerItem].[Title]
+                FROM 
+                    [Career] 
+                INNER JOIN 
+                    [CareerItem] ON [CareerItem].[CareerId] = [Career].[Id]
+                ORDER BY
+                    [Career].[Title]";
+
+            using (connection = new SqlConnection(connectionString))
+            {
+                var careers = new List<Career>();
+
+                var items = connection.Query<Career, CareerItem, Career>(
+                    sql,
+                    (career, item) =>
+                {
+                    // Verifica se o item já existe na carreira
+                    var car = careers.Where(x => x.Id == career.Id).FirstOrDefault();
+
+                    // Se não achar vem nulo
+                    if (car == null)
+                    {
+                        car = career;
+                        car.CareerItems.Add(item);
+                        careers.Add(car);
+                    }
+                    // Se achou, adiciona o item na lista de categorias da carreira
+                    else
+                    {
+                        car.CareerItems.Add(item);
+                    }
+
+                    return career;
+                }, splitOn: "CareerId"); // Onde ocorre a divisão de dados de career e careerItem
+
+                foreach (var career in careers)
+                {
+                    Console.WriteLine($"{career.Title}");
+
+                    foreach (var item in career.CareerItems)
+                    {
+                        Console.WriteLine($" - {item.Title}");
+
+                    }
+                }
+            };
+        }
+
+        // Muitos para muitos
+        public void QueryMultiple(SqlConnection connection)
+        {
+            var query = "SELECT * FROM [Category]; SELECT * FROM [Course]";
+
+            using (connection = new SqlConnection(connectionString))
+            {
+                using (var multi = connection.QueryMultiple(query)) // O queryMultiple permite realizar mais de um comando na mesma query, nesse caso dois select
+                {
+                    var categories = multi.Read<Category>();
+                    var courses = multi.Read<Course>();
+
+                    foreach (var category in categories)
+                    {
+                        Console.WriteLine(category.Title);
+                    }
+
+                    foreach (var course in courses)
+                    {
+                        Console.WriteLine(course.Title);
+                    }
+                }
+            }
+        }
+
+        // SELECT IN
+        public void SelectIn(SqlConnection connection)
+        {
+            // Selecione tudo da tabela de Cursos onde o id está em um desses dois items passados
+            // eu deixei esses dois id fixado mas isso pode ser um parametro
+            var query = @"
+                SELECT * FROM [Course] WHERE [Id] IN(
+                    '5d8cf396-e717-9a02-2443-021b00000000',
+                    '5c349848-e717-9a7d-1241-0e6500000000' )";
+
+            using (connection = new SqlConnection(connectionString))
+            {
+                var courses = connection.Query<Course>(query);
+
+                foreach (var course in courses)
+                {
+                    Console.WriteLine(course.Title);
+                }
+            }
+
+        }
+
+        // Like
+        public void Like(SqlConnection connection)
+        {
+            // Selecione tudo da tabela de cursos, onde contenha a palavra criando
+            var query = @"
+                SELECT * FROM [Course] WHERE [Title] LIKE  '%Criando%'";
+
+            using (connection = new SqlConnection(connectionString))
+            {
+                var courses = connection.Query<Course>(query);
+
+                foreach (var course in courses)
+                {
+                    Console.WriteLine(course.Title);
+                }
+            }
+
+        }
+
+        // Transaction
+        public void Transaction(SqlConnection connection)
+        {
+
+            // Cria uma nova categoria
+            var category = new Category();
+            category.Id = Guid.NewGuid();
+            category.Title = "Entity";
+            category.Url = "Entity";
+            category.Description = "Categoria destinada ao Entity";
+            category.Order = 9;
+            category.Summary = "Entity teste";
+            category.Featured = false;
+
+            var insertSql = @"INSERT INTO
+                [Category]
+                VALUES (
+                    @id,
+                    @title,
+                    @url,
+                    @description,
+                    @order,
+                    @summary,
+                    @featured
+                )";
+
+            connection = new SqlConnection(connectionString);
+
+            connection.Open();
+
+            // Inicia uma transação
+            var transaction = connection.BeginTransaction();
+
+            var rows = connection.Execute(insertSql, new
+            {
+                id = category.Id,
+                title = category.Title,
+                url = category.Url,
+                description = category.Description,
+                order = category.Order,
+                summary = category.Summary,
+                featured = category.Featured
+            }, transaction);
+
+            /*transaction.Commit();*/ // Efetua as alterações no banco
+            transaction.Rollback(); // Desfaz as alterações
+
+            Console.WriteLine($"{rows} linha(s) inseridas");
+
+            transaction.Dispose();
+
+            connection.Dispose();
+
+
         }
     }
 }
